@@ -1,0 +1,2326 @@
+{
+  "info": {
+    "_postman_id": "338f0971-2a50-4e62-9860-adb6a525e2cd",
+    "name": "treedb-backend",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "data preparation",
+      "item": [
+        {
+          "name": "log as test_account",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var response_json = pm.response.json();\r",
+                  "var token = response_json.access_token;\r",
+                  "pm.environment.set('token', token);\r",
+                  "\r",
+                  "pm.test(\"Status code is 200\", function () {\r",
+                  "    pm.response.to.have.status(200);\r",
+                  "});\r",
+                  "postman.setNextRequest(\"healthz\")"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "name": "Content-Type",
+                "type": "text",
+                "value": "application/x-www-form-urlencoded"
+              }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "username",
+                  "value": "{{username}}",
+                  "type": "text"
+                },
+                {
+                  "key": "password",
+                  "value": "{{password}}",
+                  "type": "text"
+                },
+                {
+                  "key": "client_id",
+                  "value": "{{clientId}}",
+                  "type": "text"
+                },
+                {
+                  "key": "grant_type",
+                  "value": "password",
+                  "type": "text"
+                },
+                {
+                  "key": "client_secret",
+                  "value": "{{clientSecret}}",
+                  "type": "text"
+                },
+                {
+                  "key": "scope",
+                  "value": "{{scope}}",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{auth-url}}",
+              "host": [
+                "{{auth-url}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "skiped request: userinfo from auth.youwol",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  ""
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"member of /youwol-users/postman-tester/\", function () {",
+                  "    resp = pm.response.json()",
+                  "    pm.expect(resp.memberof.filter( group => group.includes(\"/youwol-users/postman-tester/\")).length).to.be.above(0)",
+                  "});",
+                  ""
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "",
+                "type": "text",
+                "value": "",
+                "disabled": true
+              },
+              {
+                "key": "",
+                "type": "text",
+                "value": "",
+                "disabled": true
+              }
+            ],
+            "url": {
+              "raw": "https://auth.youwol.com/auth/realms/youwol/protocol/openid-connect/userinfo",
+              "protocol": "https",
+              "host": [
+                "auth",
+                "youwol",
+                "com"
+              ],
+              "path": [
+                "auth",
+                "realms",
+                "youwol",
+                "protocol",
+                "openid-connect",
+                "userinfo"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "healthz",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  ""
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{host}}/api/treedb-backend/healthz",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "api",
+                "treedb-backend",
+                "healthz"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "in shared group",
+      "item": [
+        {
+          "name": "groups",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"user has 'private' and '/youwol-users/postman-tester' groups\", function () {",
+                  "    let respJson= pm.response.json()",
+                  "    pm.expect(respJson).to.have.property('groups');",
+                  "    pm.expect(respJson.groups.filter( p => p.path==\"private\").length).to.equal(1)",
+                  "    pm.expect(respJson.groups.filter( p => p.path==\"/youwol-users/postman-tester\").length).to.equal(1)",
+                  "",
+                  "    pm.environment.set('treedb#postman_group',respJson.groups.find( p => p.path==\"/youwol-users/postman-tester\").id)",
+                  "    pm.environment.set('treedb#youwol_group',respJson.groups.find( p => p.path==\"/youwol-users\").id)",
+                  "});",
+                  ""
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "description": "bearer token",
+                "key": "Authorization",
+                "type": "text",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{host}}/api/treedb-backend/groups",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "api",
+                "treedb-backend",
+                "groups"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "drives",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"user has 'private' and '/youwol-users/postman-tester' groups\", function () {",
+                  "    let respJson= pm.response.json()",
+                  "    pm.expect(respJson).to.have.property('drives');",
+                  "});",
+                  ""
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "description": "bearer token",
+                "key": "Authorization",
+                "type": "text",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{host}}/api/treedb-backend/groups/{{treedb#postman_group}}/drives",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "api",
+                "treedb-backend",
+                "groups",
+                "{{treedb#postman_group}}",
+                "drives"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "create drive",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"response contains expected attributes\", function () {",
+                  "    ",
+                  "    let respJson= pm.response.json()",
+                  "    pm.expect(respJson).to.have.property('driveId');",
+                  "    pm.expect(respJson).to.have.property('name');",
+                  "    pm.expect(respJson).to.have.property('metadata');",
+                  "    pm.expect(respJson).to.have.property('groupId');",
+                  "    pm.expect(respJson.name).to.eq(\"treedb#drive\")",
+                  "    pm.expect(respJson.groupId).to.eq(pm.environment.get('treedb#postman_group'))",
+                  "    pm.environment.set('treedb#driveId', respJson.driveId)",
+                  "})",
+                  "",
+                  ""
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "description": "bearer token",
+                "key": "Authorization",
+                "type": "text",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"name\": \"treedb#drive\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{host}}/api/treedb-backend/groups/{{treedb#postman_group}}/drives",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "api",
+                "treedb-backend",
+                "groups",
+                "{{treedb#postman_group}}",
+                "drives"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "create folder 'a'",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"response contains expected attributes\", function () {",
+                  "    ",
+                  "    let respJson= pm.response.json()",
+                  "    pm.expect(respJson).to.have.property('name');",
+                  "    pm.expect(respJson).to.have.property('folderId');",
+                  "    pm.expect(respJson).to.have.property('parentFolderId');",
+                  "    pm.expect(respJson).to.have.property('type');",
+                  "    pm.expect(respJson).to.have.property('metadata');",
+                  "    pm.expect(respJson.name).to.eq(\"a\")",
+                  "    pm.expect(respJson.parentFolderId).to.eq(pm.environment.get(\"treedb#driveId\"))",
+                  "    pm.expect(respJson.groupId).to.eq(pm.environment.get('treedb#postman_group'))",
+                  "    pm.environment.set('treedb#folderId', respJson.folderId)",
+                  "})",
+                  ""
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "description": "bearer token",
+                "key": "Authorization",
+                "type": "text",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"name\": \"a\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{host}}/api/treedb-backend/folders/{{treedb#driveId}}",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "api",
+                "treedb-backend",
+                "folders",
+                "{{treedb#driveId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "get folder",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"get the item\", function () {",
+                  "    let respJson= pm.response.json()",
+                  "    pm.expect(respJson).to.have.property('type');",
+                  "    pm.expect(respJson).to.have.property('metadata');",
+                  "    pm.expect(respJson.folderId).to.eq(pm.environment.get(\"treedb#folderId\"))",
+                  "    pm.expect(respJson.groupId).to.eq(pm.environment.get('treedb#postman_group'))",
+                  "    pm.expect(respJson.name).to.eq(\"a\")",
+                  "    });",
+                  ""
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "description": "bearer token",
+                "key": "Authorization",
+                "type": "text",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{host}}/api/treedb-backend/folders/{{treedb#folderId}}",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "api",
+                "treedb-backend",
+                "folders",
+                "{{treedb#folderId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "items",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"drive do not contains children\", function () {",
+                  "    let respJson= pm.response.json()",
+                  "    pm.expect(respJson).to.have.property('items');",
+                  "    pm.expect(respJson).to.have.property('folders');",
+                  "    pm.expect(respJson.items.length).to.eq(0)",
+                  "    pm.expect(respJson.folders.length).to.eq(1)",
+                  "});",
+                  ""
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "description": "bearer token",
+                "key": "Authorization",
+                "type": "text",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{host}}/api/treedb-backend/folders/{{treedb#driveId}}/children",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "api",
+                "treedb-backend",
+                "folders",
+                "{{treedb#driveId}}",
+                "children"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "update folder 'a' => 'a renamed'",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"response contains expected attributes\", function () {",
+                  "    ",
+                  "    let respJson= pm.response.json()",
+                  "    pm.expect(respJson).to.have.property('name');",
+                  "    pm.expect(respJson).to.have.property('folderId');",
+                  "    pm.expect(respJson).to.have.property('parentFolderId');",
+                  "    pm.expect(respJson).to.have.property('type');",
+                  "    pm.expect(respJson).to.have.property('metadata');",
+                  "    pm.expect(respJson.parentFolderId).to.eq(pm.environment.get(\"treedb#driveId\"))",
+                  "    pm.expect(respJson.groupId).to.eq(pm.environment.get('treedb#postman_group'))",
+                  "    pm.environment.set('treedb#folderId', respJson.folderId)",
+                  "})",
+                  ""
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "description": "bearer token",
+                "key": "Authorization",
+                "type": "text",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"name\": \"a renamed\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{host}}/api/treedb-backend/folders/{{treedb#folderId}}",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "api",
+                "treedb-backend",
+                "folders",
+                "{{treedb#folderId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "items",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"drive contains folder 'a renamed'\", function () {",
+                  "    let respJson= pm.response.json()",
+                  "    pm.expect(respJson).to.have.property('items');",
+                  "    pm.expect(respJson).to.have.property('folders');",
+                  "    pm.expect(respJson.items.length).to.eq(0)",
+                  "    pm.expect(respJson.folders.length).to.eq(1)",
+                  "    pm.expect(respJson.folders[0].name).to.eq('a renamed')",
+                  "    pm.expect(respJson.folders[0].groupId).to.eq(pm.environment.get(\"treedb#postman_group\"))",
+                  "});",
+                  ""
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "description": "bearer token",
+                "key": "Authorization",
+                "type": "text",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{host}}/api/treedb-backend/folders/{{treedb#driveId}}/children",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "api",
+                "treedb-backend",
+                "folders",
+                "{{treedb#driveId}}",
+                "children"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "create item",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"response contains expected attributes\", function () {",
+                  "    ",
+                  "    let respJson= pm.response.json()",
+                  "    pm.expect(respJson).to.have.property('itemId');",
+                  "    pm.expect(respJson).to.have.property('name');",
+                  "    pm.expect(respJson).to.have.property('folderId');",
+                  "    pm.expect(respJson).to.have.property('type');",
+                  "",
+                  "    pm.expect(respJson.name).to.eq(\"item0\")",
+                  "    pm.expect(respJson.type).to.eq(\"treedb#itemType\")",
+                  "    pm.expect(respJson.folderId).to.eq(pm.environment.get(\"treedb#folderId\"))",
+                  "",
+                  "    pm.expect(respJson.groupId).to.eq(pm.environment.get('treedb#postman_group'))",
+                  "    let metadata = JSON.parse(respJson.metadata)",
+                  "    pm.expect(metadata.relatedId).to.eq(\"related_item0\")",
+                  "    pm.expect(metadata.borrowed).to.eq(true)",
+                  "",
+                  "    pm.environment.set(\"treedb#itemId\", respJson.itemId)",
+                  "})",
+                  ""
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "description": "bearer token",
+                "key": "Authorization",
+                "type": "text",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"name\": \"item0\",\n    \"type\": \"treedb#itemType\",\n    \"relatedId\": \"related_item0\",\n    \"metadata\": \"{\\\"relatedId\\\":\\\"related_item0\\\", \\\"borrowed\\\":true}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{host}}/api/treedb-backend/folders/{{treedb#folderId}}/items",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "api",
+                "treedb-backend",
+                "folders",
+                "{{treedb#folderId}}",
+                "items"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "get item",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"get the item\", function () {",
+                  "    let respJson= pm.response.json()",
+                  "    pm.expect(respJson.name).to.eq('item0')",
+                  "    pm.expect(respJson.relatedId).to.eq('related_item0')",
+                  "    pm.expect(respJson.itemId).to.eq(pm.environment.get(\"treedb#itemId\"))",
+                  "    pm.expect(respJson.groupId).to.eq(pm.environment.get(\"treedb#postman_group\"))",
+                  "    let metadata = JSON.parse(respJson.metadata)",
+                  "    pm.expect(respJson.groupId).to.eq(pm.environment.get('treedb#postman_group'))",
+                  "    pm.expect(metadata.relatedId).to.eq(\"related_item0\")",
+                  "    pm.expect(metadata.borrowed).to.eq(true)",
+                  "});",
+                  ""
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "description": "bearer token",
+                "key": "Authorization",
+                "type": "text",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{host}}/api/treedb-backend/items/{{treedb#itemId}}",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "api",
+                "treedb-backend",
+                "items",
+                "{{treedb#itemId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "get item from related_id",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"get the item\", function () {",
+                  "    let respJson= pm.response.json()['items'].find( d => d.itemId == pm.environment.get(\"treedb#itemId\" ))",
+                  "    pm.expect(respJson.name).to.eq('item0')",
+                  "    pm.expect(respJson.relatedId).to.eq('related_item0')",
+                  "    pm.expect(respJson.itemId).to.eq(pm.environment.get(\"treedb#itemId\"))",
+                  "    pm.expect(respJson.groupId).to.eq(pm.environment.get(\"treedb#postman_group\"))",
+                  "    let metadata = JSON.parse(respJson.metadata)",
+                  "    pm.expect(metadata.relatedId).to.eq(\"related_item0\")",
+                  "    pm.expect(metadata.borrowed).to.eq(true)",
+                  "});",
+                  ""
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "description": "bearer token",
+                "key": "Authorization",
+                "type": "text",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{host}}/api/treedb-backend/items/from-related/related_item0",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "api",
+                "treedb-backend",
+                "items",
+                "from-related",
+                "related_item0"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "items",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"folder contains 1 item 'item0'\", function () {",
+                  "    let respJson= pm.response.json()",
+                  "    pm.expect(respJson).to.have.property('items');",
+                  "    pm.expect(respJson).to.have.property('folders');",
+                  "    pm.expect(respJson.items.length).to.eq(1)",
+                  "    pm.expect(respJson.folders.length).to.eq(0)",
+                  "    pm.expect(respJson.items[0].name).to.eq('item0')",
+                  "    pm.expect(respJson.items[0].groupId).to.eq(pm.environment.get(\"treedb#postman_group\"))",
+                  "    let metadata = JSON.parse(respJson.items[0].metadata)",
+                  "    pm.expect(metadata.relatedId).to.eq(\"related_item0\")",
+                  "    pm.expect(metadata.borrowed).to.eq(true)",
+                  "});",
+                  ""
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "description": "bearer token",
+                "key": "Authorization",
+                "type": "text",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{host}}/api/treedb-backend/folders/{{treedb#folderId}}/children",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "api",
+                "treedb-backend",
+                "folders",
+                "{{treedb#folderId}}",
+                "children"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "create folder 'b'",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"response contains expected attributes\", function () {",
+                  "    ",
+                  "    let respJson= pm.response.json()",
+                  "    pm.expect(respJson.parentFolderId).to.eq(pm.environment.get(\"treedb#folderId\"))",
+                  "    pm.environment.set(\"treedb#folderId_b\",respJson.folderId)",
+                  "})",
+                  ""
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "description": "bearer token",
+                "key": "Authorization",
+                "type": "text",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"name\": \"b\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{host}}/api/treedb-backend/folders/{{treedb#folderId}}",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "api",
+                "treedb-backend",
+                "folders",
+                "{{treedb#folderId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "move item",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"response contains expected attributes\", function () {",
+                  "    respJson = pm.response.json()",
+                  "    pm.expect(respJson.foldersCount).to.eq(0)",
+                  "    pm.expect(respJson.items.length).to.eq(1)",
+                  "    pm.expect(respJson.items[0].folderId).to.eq(pm.environment.get(\"treedb#folderId_b\"))",
+                  "})",
+                  ""
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "description": "bearer token",
+                "key": "Authorization",
+                "type": "text",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"targetId\": \"{{treedb#itemId}}\",\n    \"destinationFolderId\": \"{{treedb#folderId_b}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{host}}/api/treedb-backend/move",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "api",
+                "treedb-backend",
+                "move"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "get records",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"ensure record\", function () {",
+                  "    jsonResp = pm.response.json()",
+                  "    pm.expect(jsonResp).to.have.property(\"docdb\")",
+                  "    pm.expect(jsonResp).to.have.property(\"storage\")",
+                  "",
+                  "    pm.expect(jsonResp.docdb).to.have.property(\"keyspaces\")",
+                  "    keyspace = jsonResp.docdb.keyspaces[0]",
+                  "    pm.expect(keyspace).to.have.property(\"groupId\")",
+                  "    pm.expect(keyspace.id).to.eq(\"tree_db\")",
+                  "",
+                  "    pm.expect(keyspace).to.have.property(\"tables\")",
+                  "    table0 = keyspace.tables[0]",
+                  "    pm.expect(table0.id).to.eq(\"items\")",
+                  "    table1 = keyspace.tables[1]",
+                  "    pm.expect(table1.id).to.eq(\"folders\")",
+                  "",
+                  "    pm.expect(table0).to.have.property(\"values\")",
+                  "    pm.expect(table1).to.have.property(\"values\")",
+                  "    ",
+                  "    pm.expect(table0.values).to.deep.eq([pm.environment.get(\"treedb#itemId\")])",
+                  "",
+                  "    pm.expect(table1.values.length).to.eq(2)",
+                  "    pm.expect(table1.values.filter( d => d ==  pm.environment.get('treedb#folderId')).length).to.eq(1)",
+                  "    pm.expect(table1.values.filter( d => d ==  pm.environment.get('treedb#folderId_b')).length).to.eq(1)",
+                  "});",
+                  ""
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "description": "bearer token",
+                "key": "Authorization",
+                "type": "text",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"folderId\": \"{{treedb#driveId}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{host}}/api/treedb-backend/records",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "api",
+                "treedb-backend",
+                "records"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "log as anonymous",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var response_json = pm.response.json();\r",
+                  "var token = response_json.access_token;\r",
+                  "pm.environment.set('token', token);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "name": "Content-Type",
+                "type": "text",
+                "value": "application/x-www-form-urlencoded"
+              },
+              {
+                "key": "",
+                "type": "text",
+                "value": ""
+              }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "client_id",
+                  "value": "{{clientId}}",
+                  "type": "text"
+                },
+                {
+                  "key": "grant_type",
+                  "value": "client_credentials",
+                  "type": "text"
+                },
+                {
+                  "key": "client_secret",
+                  "value": "{{clientSecret}}",
+                  "type": "text"
+                },
+                {
+                  "key": "scope",
+                  "value": "{{scope}}",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{auth-url}}",
+              "host": [
+                "{{auth-url}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "groups anonymous",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"user has 'private' and '/youwol-users/postman-tester' groups\", function () {",
+                  "    let respJson= pm.response.json()",
+                  "    pm.expect(respJson).to.have.property('groups');",
+                  "    pm.expect(respJson.groups.length).to.equal(2); // private, anonymous",
+                  "});",
+                  ""
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "description": "bearer token",
+                "key": "Authorization",
+                "type": "text",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{host}}/api/treedb-backend/groups",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "api",
+                "treedb-backend",
+                "groups"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "get item",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 401\", function () {",
+                  "    pm.response.to.have.status(401);",
+                  "});",
+                  ""
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "description": "bearer token",
+                "key": "Authorization",
+                "type": "text",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{host}}/api/treedb-backend/items/{{treedb#itemId}}",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "api",
+                "treedb-backend",
+                "items",
+                "{{treedb#itemId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "log as test_account",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var response_json = pm.response.json();\r",
+                  "var token = response_json.access_token;\r",
+                  "pm.environment.set('token', token);\r",
+                  "\r",
+                  "pm.test(\"Status code is 200\", function () {\r",
+                  "    pm.response.to.have.status(200);\r",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "name": "Content-Type",
+                "type": "text",
+                "value": "application/x-www-form-urlencoded"
+              }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "username",
+                  "value": "{{username}}",
+                  "type": "text"
+                },
+                {
+                  "key": "password",
+                  "value": "{{password}}",
+                  "type": "text"
+                },
+                {
+                  "key": "client_id",
+                  "value": "{{clientId}}",
+                  "type": "text"
+                },
+                {
+                  "key": "grant_type",
+                  "value": "password",
+                  "type": "text"
+                },
+                {
+                  "key": "client_secret",
+                  "value": "{{clientSecret}}",
+                  "type": "text"
+                },
+                {
+                  "key": "scope",
+                  "value": "{{scope}}",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{auth-url}}",
+              "host": [
+                "{{auth-url}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "create drive public",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"response contains expected attributes\", function () {",
+                  "    ",
+                  "    let respJson= pm.response.json()",
+                  "    pm.expect(respJson).to.have.property('driveId');",
+                  "    pm.expect(respJson).to.have.property('name');",
+                  "    pm.expect(respJson).to.have.property('metadata');",
+                  "    pm.expect(respJson).to.have.property('groupId');",
+                  "    pm.expect(respJson.name).to.eq(\"treedb#drive public\")",
+                  "    pm.expect(respJson.groupId).to.eq(pm.environment.get('treedb#youwol_group'))",
+                  "    pm.environment.set('treedb#publicDriveId', respJson.driveId)",
+                  "})",
+                  "",
+                  ""
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "description": "bearer token",
+                "key": "Authorization",
+                "type": "text",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"name\": \"treedb#drive public\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{host}}/api/treedb-backend/groups/{{treedb#youwol_group}}/drives",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "api",
+                "treedb-backend",
+                "groups",
+                "{{treedb#youwol_group}}",
+                "drives"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "move folder through groups",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"response contains expected attributes\", function () {",
+                  "    respJson = pm.response.json()",
+                  "    pm.expect(respJson.foldersCount).to.eq(2)",
+                  "    pm.expect(respJson.items.length).to.eq(1)",
+                  "    pm.expect(respJson.items[0].folderId).to.eq(pm.environment.get(\"treedb#folderId_b\"))",
+                  "    pm.expect(respJson.items[0].groupId).to.eq(pm.environment.get(\"treedb#youwol_group\"))",
+                  "    pm.expect(respJson.items[0].driveId).to.eq(pm.environment.get(\"treedb#publicDriveId\"))",
+                  "    pm.expect(respJson.items[0].relatedId).to.eq(\"related_item0\")",
+                  "    pm.expect(respJson.items[0].itemId).to.eq(pm.environment.get(\"treedb#itemId\"))",
+                  "})",
+                  ""
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "description": "bearer token",
+                "key": "Authorization",
+                "type": "text",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"targetId\": \"{{treedb#folderId}}\",\n    \"destinationFolderId\": \"{{treedb#publicDriveId}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{host}}/api/treedb-backend/move",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "api",
+                "treedb-backend",
+                "move"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "children drive public",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"drive do not contains children\", function () {",
+                  "    let respJson= pm.response.json()",
+                  "    pm.expect(respJson).to.have.property('items');",
+                  "    pm.expect(respJson).to.have.property('folders');",
+                  "    pm.expect(respJson.items.length).to.eq(0)",
+                  "    pm.expect(respJson.folders.length).to.eq(1)",
+                  "    pm.expect(respJson.folders[0].groupId).to.eq(pm.environment.get(\"treedb#youwol_group\"))",
+                  "    pm.expect(respJson.folders[0].driveId).to.eq(pm.environment.get(\"treedb#publicDriveId\"))",
+                  "    pm.expect(respJson.folders[0].name).to.eq('a renamed')",
+                  "});",
+                  ""
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "description": "bearer token",
+                "key": "Authorization",
+                "type": "text",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{host}}/api/treedb-backend/folders/{{treedb#publicDriveId}}/children",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "api",
+                "treedb-backend",
+                "folders",
+                "{{treedb#publicDriveId}}",
+                "children"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "children folder a",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"drive contains folder 'a renamed'\", function () {",
+                  "    let respJson= pm.response.json()",
+                  "    pm.expect(respJson).to.have.property('items');",
+                  "    pm.expect(respJson).to.have.property('folders');",
+                  "    pm.expect(respJson.items.length).to.eq(0)",
+                  "    pm.expect(respJson.folders.length).to.eq(1)",
+                  "    pm.expect(respJson.folders[0].name).to.eq('b')",
+                  "    pm.expect(respJson.folders[0].groupId).to.eq(pm.environment.get(\"treedb#youwol_group\"))",
+                  "});",
+                  ""
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "description": "bearer token",
+                "key": "Authorization",
+                "type": "text",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{host}}/api/treedb-backend/folders/{{treedb#folderId}}/children",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "api",
+                "treedb-backend",
+                "folders",
+                "{{treedb#folderId}}",
+                "children"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "children folder b",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"drive contains folder 'a renamed'\", function () {",
+                  "    let respJson= pm.response.json()",
+                  "    pm.expect(respJson).to.have.property('items');",
+                  "    pm.expect(respJson).to.have.property('folders');",
+                  "    pm.expect(respJson.items.length).to.eq(1)",
+                  "    pm.expect(respJson.items[0].folderId).to.eq(pm.environment.get(\"treedb#folderId_b\"))",
+                  "    pm.expect(respJson.items[0].groupId).to.eq(pm.environment.get(\"treedb#youwol_group\"))",
+                  "    pm.expect(respJson.items[0].driveId).to.eq(pm.environment.get(\"treedb#publicDriveId\"))",
+                  "});",
+                  ""
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "description": "bearer token",
+                "key": "Authorization",
+                "type": "text",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{host}}/api/treedb-backend/folders/{{treedb#folderId_b}}/children",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "api",
+                "treedb-backend",
+                "folders",
+                "{{treedb#folderId_b}}",
+                "children"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "log as anonymous",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var response_json = pm.response.json();\r",
+                  "var token = response_json.access_token;\r",
+                  "pm.environment.set('token', token);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "name": "Content-Type",
+                "type": "text",
+                "value": "application/x-www-form-urlencoded"
+              },
+              {
+                "key": "",
+                "type": "text",
+                "value": ""
+              }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "client_id",
+                  "value": "{{clientId}}",
+                  "type": "text"
+                },
+                {
+                  "key": "grant_type",
+                  "value": "client_credentials",
+                  "type": "text"
+                },
+                {
+                  "key": "client_secret",
+                  "value": "{{clientSecret}}",
+                  "type": "text"
+                },
+                {
+                  "key": "scope",
+                  "value": "{{scope}}",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{auth-url}}",
+              "host": [
+                "{{auth-url}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "get item",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"response contains expected attributes\", function () {",
+                  "    respJson = pm.response.json()",
+                  "    ",
+                  "    pm.expect(respJson.folderId).to.eq(pm.environment.get(\"treedb#folderId_b\"))",
+                  "    pm.expect(respJson.groupId).to.eq(pm.environment.get(\"treedb#youwol_group\"))",
+                  "    pm.expect(respJson.driveId).to.eq(pm.environment.get(\"treedb#publicDriveId\"))",
+                  "    pm.expect(respJson.relatedId).to.eq(\"related_item0\")",
+                  "    pm.expect(respJson.itemId).to.eq(pm.environment.get(\"treedb#itemId\"))",
+                  "})",
+                  ""
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "description": "bearer token",
+                "key": "Authorization",
+                "type": "text",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{host}}/api/treedb-backend/items/{{treedb#itemId}}",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "api",
+                "treedb-backend",
+                "items",
+                "{{treedb#itemId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "delete item1",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  ""
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "description": "bearer token",
+                "key": "Authorization",
+                "type": "text",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"name\": \"a\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{host}}/api/treedb-backend/items/{{treedb#itemId}}",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "api",
+                "treedb-backend",
+                "items",
+                "{{treedb#itemId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "log as test_account",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var response_json = pm.response.json();\r",
+                  "var token = response_json.access_token;\r",
+                  "pm.environment.set('token', token);\r",
+                  "\r",
+                  "pm.test(\"Status code is 200\", function () {\r",
+                  "    pm.response.to.have.status(200);\r",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "name": "Content-Type",
+                "type": "text",
+                "value": "application/x-www-form-urlencoded"
+              }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "username",
+                  "value": "{{username}}",
+                  "type": "text"
+                },
+                {
+                  "key": "password",
+                  "value": "{{password}}",
+                  "type": "text"
+                },
+                {
+                  "key": "client_id",
+                  "value": "{{clientId}}",
+                  "type": "text"
+                },
+                {
+                  "key": "grant_type",
+                  "value": "password",
+                  "type": "text"
+                },
+                {
+                  "key": "client_secret",
+                  "value": "{{clientSecret}}",
+                  "type": "text"
+                },
+                {
+                  "key": "scope",
+                  "value": "{{scope}}",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{auth-url}}",
+              "host": [
+                "{{auth-url}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "delete folder 'a'",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  ""
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "description": "bearer token",
+                "key": "Authorization",
+                "type": "text",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"name\": \"a\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{host}}/api/treedb-backend/folders/{{treedb#folderId}}",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "api",
+                "treedb-backend",
+                "folders",
+                "{{treedb#folderId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "items",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"drive do not contains children\", function () {",
+                  "    let respJson= pm.response.json()",
+                  "    pm.expect(respJson).to.have.property('items');",
+                  "    pm.expect(respJson).to.have.property('folders');",
+                  "    pm.expect(respJson.items.length).to.eq(0)",
+                  "    pm.expect(respJson.folders.length).to.eq(0)",
+                  "});",
+                  ""
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "description": "bearer token",
+                "key": "Authorization",
+                "type": "text",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{host}}/api/treedb-backend/folders/{{treedb#driveId}}/children",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "api",
+                "treedb-backend",
+                "folders",
+                "{{treedb#driveId}}",
+                "children"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "list deleted",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"deleted are 'item1' & 'a renamed'\", function () {",
+                  "    let respJson= pm.response.json()",
+                  "    pm.expect(respJson).to.have.property('items');",
+                  "    pm.expect(respJson).to.have.property('folders');",
+                  "    pm.expect(respJson.items.length).to.eq(1)",
+                  "    pm.expect(respJson.folders.length).to.eq(1)",
+                  "    pm.expect(respJson.items[0].name).to.eq(\"item0\")",
+                  "    pm.expect(respJson.items[0].itemId).to.eq(pm.environment.get(\"treedb#itemId\"))",
+                  "    pm.expect(respJson.folders[0].name).to.eq('a renamed')",
+                  "",
+                  "    let metadata = JSON.parse(respJson.items[0].metadata)",
+                  "    pm.expect(metadata.relatedId).to.eq(\"related_item0\")",
+                  "    pm.expect(metadata.borrowed).to.eq(true)",
+                  "});",
+                  ""
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "description": "bearer token",
+                "key": "Authorization",
+                "type": "text",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{host}}/api/treedb-backend/drives/{{treedb#publicDriveId}}/deleted",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "api",
+                "treedb-backend",
+                "drives",
+                "{{treedb#publicDriveId}}",
+                "deleted"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "update drive",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"response contains expected attributes\", function () {",
+                  "    ",
+                  "    let respJson= pm.response.json()",
+                  "    pm.expect(respJson).to.have.property('name');",
+                  "    pm.expect(respJson).to.have.property('driveId');",
+                  "    pm.expect(respJson).to.have.property('groupId');",
+                  "    pm.expect(respJson.name).to.eq(\"drive renamed\");",
+                  "    pm.expect(respJson.driveId).to.eq(pm.environment.get(\"treedb#publicDriveId\"));",
+                  "})",
+                  ""
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "description": "bearer token",
+                "key": "Authorization",
+                "type": "text",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"name\": \"drive renamed\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{host}}/api/treedb-backend/drives/{{treedb#publicDriveId}}",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "api",
+                "treedb-backend",
+                "drives",
+                "{{treedb#publicDriveId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "purge drive",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"4 folders deleted, 13 items deleted\", function () {",
+                  "    ",
+                  "    let respJson= pm.response.json()",
+                  "    pm.expect(respJson).to.have.property('foldersCount');",
+                  "    pm.expect(respJson).to.have.property('itemsCount');",
+                  "    pm.expect(respJson).to.have.property('items');",
+                  "    pm.expect(respJson.foldersCount).to.equal(2)",
+                  "    pm.expect(respJson.itemsCount).to.equal(1)",
+                  "    pm.expect(respJson.items.length).to.equal(respJson.itemsCount)",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "description": "bearer token",
+                "key": "Authorization",
+                "type": "text",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{host}}/api/treedb-backend/drives/{{treedb#publicDriveId}}/purge",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "api",
+                "treedb-backend",
+                "drives",
+                "{{treedb#publicDriveId}}",
+                "purge"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "list deleted",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"no more items to delete\", function () {",
+                  "    let respJson= pm.response.json()",
+                  "    pm.expect(respJson).to.have.property('items');",
+                  "    pm.expect(respJson).to.have.property('folders');",
+                  "    pm.expect(respJson.items.length).to.eq(0)",
+                  "    pm.expect(respJson.folders.length).to.eq(0)",
+                  "});",
+                  ""
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "description": "bearer token",
+                "key": "Authorization",
+                "type": "text",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{host}}/api/treedb-backend/drives/{{treedb#publicDriveId}}/deleted",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "api",
+                "treedb-backend",
+                "drives",
+                "{{treedb#publicDriveId}}",
+                "deleted"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "delete drive",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  ""
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "description": "bearer token",
+                "key": "Authorization",
+                "type": "text",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{host}}/api/treedb-backend/drives/{{treedb#driveId}}",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "api",
+                "treedb-backend",
+                "drives",
+                "{{treedb#driveId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "delete public drive",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  ""
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "description": "bearer token",
+                "key": "Authorization",
+                "type": "text",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{host}}/api/treedb-backend/drives/{{treedb#publicDriveId}}",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "api",
+                "treedb-backend",
+                "drives",
+                "{{treedb#publicDriveId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "drives",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"do not contains drive anymore\", function () {",
+                  "    let respJson= pm.response.json()",
+                  "    pm.expect(respJson).to.have.property('drives');",
+                  "    pm.expect(respJson.drives.filter( d => d.driveId == pm.environment.get(\"treedb#driveId\")).length).to.eq(0)",
+                  "});",
+                  ""
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "description": "bearer token",
+                "key": "Authorization",
+                "type": "text",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{host}}/api/treedb-backend/groups/{{treedb#postman_group}}/drives",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "api",
+                "treedb-backend",
+                "groups",
+                "{{treedb#postman_group}}",
+                "drives"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "drives",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"do not contains drive anymore\", function () {",
+                  "    let respJson= pm.response.json()",
+                  "    pm.expect(respJson).to.have.property('drives');",
+                  "    pm.expect(respJson.drives.filter( d => d.driveId == pm.environment.get(\"treedb#publicDriveId\")).length).to.eq(0)",
+                  "});",
+                  ""
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "description": "bearer token",
+                "key": "Authorization",
+                "type": "text",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{host}}/api/treedb-backend/groups/{{treedb#youwol_group}}/drives",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "api",
+                "treedb-backend",
+                "groups",
+                "{{treedb#youwol_group}}",
+                "drives"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}
